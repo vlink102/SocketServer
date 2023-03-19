@@ -4,21 +4,37 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6a6b5e18-55be-4997-ab53-76c08634388e" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/example/Main.java" afterDir="false" />
+    <list default="true" id="6a6b5e18-55be-4997-ab53-76c08634388e" name="Changes" comment="e">
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/git_toolbox_prj.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/vlink102/personal/chess/socketserver/ClientSocket.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/vlink102/personal/chess/socketserver/MySQLConnection.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/vlink102/personal/chess/socketserver/ratings/Rating.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/vlink102/personal/chess/socketserver/ratings/RatingCalculator.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/vlink102/personal/chess/socketserver/ratings/RatingPeriodResults.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/vlink102/personal/chess/socketserver/ratings/Result.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/vlink102/personal/chess/socketserver/Main.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitToolBoxStore">
+    <option name="projectConfigVersion" value="5" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
@@ -29,16 +45,31 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "WebServerToolWindowFactoryState": "false"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/ethan/Library/Mobile Documents/com~apple~CloudDocs/Misc/Java/SocketServer/src/main/java/me/vlink102/personal/chess/socketserver&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;
+  },
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;mysql&quot;
+    ]
   }
-}]]></component>
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/main/java/me/vlink102/personal/chess/socketserver" />
+    </key>
+  </component>
   <component name="RunManager">
-    <configuration name="Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="org.example.Main" />
+    <configuration name="me.vlink102.personal.chess.socketserver.Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="me.vlink102.personal.chess.socketserver.Main" />
       <module name="SocketServer" />
       <extension name="coverage">
         <pattern>
@@ -52,7 +83,7 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.Main" />
+        <item itemvalue="Application.me.vlink102.personal.chess.socketserver.Main" />
       </list>
     </recent_temporary>
   </component>
@@ -64,8 +95,19 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1678309971257</updated>
-      <workItem from="1678309972837" duration="3803000" />
+      <workItem from="1678309972837" duration="4094000" />
+      <workItem from="1679147627935" duration="20161000" />
+      <workItem from="1679242526056" duration="4000" />
+      <workItem from="1679242550809" duration="12432000" />
     </task>
+    <task id="LOCAL-00001" summary="e">
+      <created>1678318279966</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1678318279966</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -81,5 +123,9 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="e" />
+    <option name="LAST_COMMIT_MESSAGE" value="e" />
   </component>
 </project>
