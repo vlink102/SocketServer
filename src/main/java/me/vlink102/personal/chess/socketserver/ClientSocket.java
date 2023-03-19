@@ -139,7 +139,7 @@ public class ClientSocket extends Thread {
                         opponentSocket.outputStream.writeBytes(o + "\n");
                         opponentSocket.outputStream.flush();
                         outputStream.writeBytes("Successfully sent challenge to " + Main.connection.nameFromUUID(to) + "!\n");
-                        outputStream.flush();
+                        outputStream.flush(); // TODO convert all messages to jsonobjects (INCLUDING CONNECT SERVER)
                     }
                 }
             }
