@@ -8,10 +8,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.HashMap;
 
 public class Main {
@@ -21,29 +19,6 @@ public class Main {
 
     private static volatile boolean listening = true;
     public static final HashMap<String, ClientSocket> CONNECTED_SOCKET_MAP = new HashMap<>();
-
-    public record Challenge(String from, String to) {}
-
-    public static final HashMap<Long, Challenge> PENDING_CHALLENGES = new HashMap<>();
-
-    public static ClientSocket getFromUUID(String uuid) {
-        return CONNECTED_SOCKET_MAP.get(uuid);
-    }
-
-    public static void addPendingChallenge(String from, String to) {
-        PENDING_CHALLENGES.put(System.currentTimeMillis(), new Challenge(from, to));
-    }
-
-    public static void clearTimedOutChallenges() {
-        HashMap<Long, Challenge> newChallenges = new HashMap<>(PENDING_CHALLENGES);
-        PENDING_CHALLENGES.forEach((aLong, challenge) -> {
-            if (aLong < 60 * 1000) {
-                newChallenges.put(aLong, challenge);
-            }
-        });
-        PENDING_CHALLENGES.clear();
-        PENDING_CHALLENGES.putAll(newChallenges);
-    }
 
     public static void addCSocket(String uuid, ClientSocket socket) {
         CONNECTED_SOCKET_MAP.put(uuid, socket);

@@ -2,13 +2,15 @@ package me.vlink102.personal.chess.socketserver;
 
 import org.json.JSONObject;
 
+import javax.swing.*;
 import java.io.*;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Objects;
 import java.util.Set;
 
 public class ClientSocket extends Thread {
     private final Socket socket;
-    private boolean playing = false;
     private final String uuid;
     private final InputStreamReader streamReader;
     private final PrintWriter printWriter;
@@ -16,6 +18,7 @@ public class ClientSocket extends Thread {
     private final DataOutputStream outputStream;
 
     public ClientSocket(Socket socket, String uuid, InputStreamReader streamReader, PrintWriter printWriter, BufferedReader reader) {
+        this.pendingChallenges = new HashMap<>();
         this.socket = socket;
         this.uuid = uuid;
         this.streamReader = streamReader;
@@ -33,14 +36,6 @@ public class ClientSocket extends Thread {
         return uuid;
     }
 
-    public void setPlaying(boolean playing) {
-        this.playing = playing;
-    }
-
-    public boolean isPlaying() {
-        return playing;
-    }
-
     public enum PacketType {
         ONLINE,
         MOVE,
@@ -50,7 +45,9 @@ public class ClientSocket extends Thread {
         INIT_GAME,
         GAME_OVER,
         ONLINE_REQUEST,
-        CHALLENGE
+        CHALLENGE,
+        ACCEPT_CHALLENGE,
+        DECLINE_CHALLENGE
     }
 
     public PacketType getPacketType(JSONObject object) {
@@ -67,20 +64,37 @@ public class ClientSocket extends Thread {
         if (keys.contains("move")) {
             return PacketType.MOVE;
         }
-        if (keys.contains("opponent")) {
-            return PacketType.INIT_GAME;
-        }
         if (keys.contains("draw")) {
             return PacketType.GAME_OVER;
         }
         if (keys.contains("online_request_uuid")) {
             return PacketType.ONLINE_REQUEST;
         }
-        if (keys.contains("challenger")) {
+        if (keys.contains("challenge-id")) {
             return PacketType.CHALLENGE;
+        }
+        if (keys.contains("declined-challenge")) {
+            return PacketType.DECLINE_CHALLENGE;
+        }
+        if (keys.contains("accepted-challenge")) {
+            return PacketType.ACCEPT_CHALLENGE;
         }
         return null;
     }
+
+    public JSONObject getOnline(String requestUUID) {
+        JSONObject wrapper = new JSONObject();
+        JSONObject o = new JSONObject();
+        for (String uuid : Main.CONNECTED_SOCKET_MAP.keySet()) {
+            if (!(requestUUID.equals(uuid))) {
+                o.put(uuid, Main.connection.nameFromUUID(uuid));
+            }
+        }
+        wrapper.put("online_players", o);
+        return wrapper;
+    }
+
+    private final HashMap<Long, JSONObject> pendingChallenges;
 
     @Override
     public void run() {
@@ -92,54 +106,93 @@ public class ClientSocket extends Thread {
                 PacketType type = getPacketType(object);
                 if (type == null) continue;
 
+                System.out.println(move);
 
                 switch (type) {
+                    case ONLINE -> {
+                        for (String uuid : Main.CONNECTED_SOCKET_MAP.keySet()) {
+                            DataOutputStream stream = Main.CONNECTED_SOCKET_MAP.get(uuid).outputStream;
+                            stream.writeBytes(getOnline(this.uuid) + "\n");
+                            stream.flush();
+                        }
+                    }
                     case MOVE -> {
 
                     }
                     case ABORT -> {
                         String uuid = object.getString("abort_uuid");
-                        setPlaying(false);
                     }
                     case RESIGN -> {
                         String uuid = object.getString("resign_uuid");
-                        setPlaying(false);
                     }
                     case OFFER_DRAW -> {
                         String uuid = object.getString("draw_uuid");
                         // get opposition TODO
-                        setPlaying(false);
                     }
                     case INIT_GAME -> {
                         String opponent = object.getString("opponent");
-
-                        setPlaying(true);
                     }
                     case GAME_OVER -> {
-                        setPlaying(false);
+
                     }
                     case ONLINE_REQUEST -> {
-                        JSONObject wrapper = new JSONObject();
-                        JSONObject o = new JSONObject();
-                        for (String uuid : Main.CONNECTED_SOCKET_MAP.keySet()) {
-                            if (!Main.CONNECTED_SOCKET_MAP.get(uuid).isPlaying() && !(object.getString("online_request_uuid").equals(uuid))) {
-                                o.put(uuid, Main.connection.nameFromUUID(uuid));
-                            }
-                        }
-                        wrapper.put("online_players", o);
-                        outputStream.writeBytes(wrapper + "\n");
+                        outputStream.writeBytes(getOnline(this.uuid) + "\n");
                         outputStream.flush();
                     }
                     case CHALLENGE -> {
-                        String to = object.getString("challenged");
-                        Main.addPendingChallenge(uuid, to);
-                        JSONObject o = new JSONObject();
-                        o.put("incoming_challenge", uuid);
-                        ClientSocket opponentSocket = Main.getFromUUID(to);
-                        opponentSocket.outputStream.writeBytes(o + "\n");
+                        String opponentUUID = object.getString("challenged");
+                        if (!Objects.equals(object.getString("challenger"), uuid)) {
+                            System.out.println("Error: Challenger UUID does not equal ClientSocket saved UUID");
+                            break;
+                        }
+                        ClientSocket opponentSocket = Main.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                        if (opponentSocket == null) {
+                            System.out.println("Error: Opponent ClientSocket not found");
+                            break;
+                        }
+
+                        outputStream.writeBytes("Successfully sent challenge to " + Main.connection.nameFromUUID(opponentUUID) + "!\n");
+                        outputStream.flush();
+
+                        pendingChallenges.put(object.getLong("challenge-id"), object);
+
+                        opponentSocket.outputStream.writeBytes("Successfully received challenge from " + Main.connection.nameFromUUID(uuid) + "!\n");
                         opponentSocket.outputStream.flush();
-                        outputStream.writeBytes("Successfully sent challenge to " + Main.connection.nameFromUUID(to) + "!\n");
-                        outputStream.flush(); // TODO convert all messages to jsonobjects (INCLUDING CONNECT SERVER)
+
+                        opponentSocket.outputStream.writeBytes(object + "\n");
+                        opponentSocket.outputStream.flush();
+                    }
+                    case ACCEPT_CHALLENGE -> {
+                        Long challengeID = object.getLong("accepted-challenge");
+                        String opponentUUID = object.getString("opponent");
+                        ClientSocket opponentSocket = Main.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                        if (!opponentSocket.pendingChallenges.containsKey(challengeID)) {
+                            System.out.println("Error: Client accepted nonexistent challenge");
+                            break;
+                        }
+                        JSONObject acceptedChallenge = opponentSocket.pendingChallenges.get(challengeID);
+                        outputStream.writeBytes("Successfully accepted " + Main.connection.nameFromUUID(opponentUUID) + "'s challenge!\n");
+                        outputStream.flush();
+                        opponentSocket.outputStream.writeBytes(Main.connection.nameFromUUID(uuid) + " accepted your challenge!\n");
+                        opponentSocket.outputStream.flush();
+
+                        opponentSocket.pendingChallenges.remove(challengeID);
+                    }
+                    case DECLINE_CHALLENGE -> {
+                        Long challengeID = object.getLong("declined-challenge");
+                        String opponentUUID = object.getString("opponent");
+                        ClientSocket opponentSocket = Main.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                        if (!opponentSocket.pendingChallenges.containsKey(challengeID)) {
+                            System.out.println("Error: Client declined nonexistent challenge");
+                            break;
+                        }
+                        JSONObject declinedChallenge = opponentSocket.pendingChallenges.get(challengeID);
+                        outputStream.writeBytes("Successfully declined " + Main.connection.nameFromUUID(opponentUUID) + "'s challenge!\n");
+                        outputStream.flush();
+                        opponentSocket.outputStream.writeBytes(Main.connection.nameFromUUID(uuid) + " declined your challenge.\n");
+                        opponentSocket.outputStream.flush();
+
+                        opponentSocket.pendingChallenges.remove(challengeID);
                     }
                 }
             }
