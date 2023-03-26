@@ -5,9 +5,7 @@ import org.json.JSONObject;
 import javax.swing.*;
 import java.io.*;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 public class ClientSocket extends Thread {
     private final Socket socket;
@@ -19,6 +17,7 @@ public class ClientSocket extends Thread {
 
     public ClientSocket(Socket socket, String uuid, InputStreamReader streamReader, PrintWriter printWriter, BufferedReader reader) {
         this.pendingChallenges = new HashMap<>();
+        this.games = new HashMap<>();
         this.socket = socket;
         this.uuid = uuid;
         this.streamReader = streamReader;
@@ -42,12 +41,12 @@ public class ClientSocket extends Thread {
         OFFER_DRAW,
         RESIGN,
         ABORT,
-        INIT_GAME,
-        GAME_OVER,
         ONLINE_REQUEST,
         CHALLENGE,
         ACCEPT_CHALLENGE,
-        DECLINE_CHALLENGE
+        DECLINE_CHALLENGE,
+        ACCEPT_DRAW,
+        DECLINE_DRAW
     }
 
     public PacketType getPacketType(JSONObject object) {
@@ -61,11 +60,8 @@ public class ClientSocket extends Thread {
         if (keys.contains("draw_uuid")) {
             return PacketType.OFFER_DRAW;
         }
-        if (keys.contains("move")) {
+        if (keys.contains("game-id")) {
             return PacketType.MOVE;
-        }
-        if (keys.contains("draw")) {
-            return PacketType.GAME_OVER;
         }
         if (keys.contains("online_request_uuid")) {
             return PacketType.ONLINE_REQUEST;
@@ -78,6 +74,12 @@ public class ClientSocket extends Thread {
         }
         if (keys.contains("accepted-challenge")) {
             return PacketType.ACCEPT_CHALLENGE;
+        }
+        if (keys.contains("declined-draw-game-id")) {
+            return PacketType.DECLINE_DRAW;
+        }
+        if (keys.contains("accepted-draw-game-id")) {
+            return PacketType.ACCEPT_DRAW;
         }
         return null;
     }
@@ -95,6 +97,7 @@ public class ClientSocket extends Thread {
     }
 
     private final HashMap<Long, JSONObject> pendingChallenges;
+    private final HashMap<Long, Game> games;
 
     @Override
     public void run() {
@@ -103,10 +106,10 @@ public class ClientSocket extends Thread {
             while ((move = reader.readLine()) != null) {
                 JSONObject object = new JSONObject(move);
 
+                System.out.println(move);
                 PacketType type = getPacketType(object);
                 if (type == null) continue;
 
-                System.out.println(move);
 
                 switch (type) {
                     case ONLINE -> {
@@ -117,23 +120,52 @@ public class ClientSocket extends Thread {
                         }
                     }
                     case MOVE -> {
-
+                        long gameID = object.getLong("game-id");
+                        if (games.containsKey(gameID)) {
+                            Game game = games.get(gameID);
+                            String opponentUUID = game.getOpponent();
+                            ClientSocket opponentSocket = Main.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                            opponentSocket.outputStream.writeBytes(object + "\n");
+                            opponentSocket.outputStream.flush();
+                        } else {
+                            System.out.println("Error: Client sent move to nonexistent game: " + gameID);
+                        }
                     }
                     case ABORT -> {
-                        String uuid = object.getString("abort_uuid");
+                        long gameID = object.getLong("abort-game-id");
+                        if (games.containsKey(gameID)) {
+                            Game game = games.get(gameID);
+                            String opponentUUID = game.getOpponent();
+                            ClientSocket opponentSocket = Main.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                            opponentSocket.outputStream.writeBytes(object + "\n");
+                            opponentSocket.outputStream.flush();
+                        } else {
+                            System.out.println("Error: Client sent abort to nonexistent game: " + gameID);
+                        }
                     }
                     case RESIGN -> {
-                        String uuid = object.getString("resign_uuid");
+                        long gameID = object.getLong("resign-game-id");
+                        if (games.containsKey(gameID)) {
+                            Game game = games.get(gameID);
+                            String opponentUUID = game.getOpponent();
+                            ClientSocket opponentSocket = Main.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                            opponentSocket.outputStream.writeBytes(object + "\n");
+                            opponentSocket.outputStream.flush();
+                        } else {
+                            System.out.println("Error: Client sent resignation to nonexistent game: " + gameID);
+                        }
                     }
                     case OFFER_DRAW -> {
-                        String uuid = object.getString("draw_uuid");
-                        // get opposition TODO
-                    }
-                    case INIT_GAME -> {
-                        String opponent = object.getString("opponent");
-                    }
-                    case GAME_OVER -> {
-
+                        long gameID = object.getLong("draw-game-id");
+                        if (games.containsKey(gameID)) {
+                            Game game = games.get(gameID);
+                            String opponentUUID = game.getOpponent();
+                            ClientSocket opponentSocket = Main.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                            opponentSocket.outputStream.writeBytes(object + "\n");
+                            opponentSocket.outputStream.flush();
+                        } else {
+                            System.out.println("Error: Client sent draw to nonexistent game: " + gameID);
+                        }
                     }
                     case ONLINE_REQUEST -> {
                         outputStream.writeBytes(getOnline(this.uuid) + "\n");
@@ -173,10 +205,20 @@ public class ClientSocket extends Thread {
                         JSONObject acceptedChallenge = opponentSocket.pendingChallenges.get(challengeID);
                         outputStream.writeBytes("Successfully accepted " + Main.connection.nameFromUUID(opponentUUID) + "'s challenge!\n");
                         outputStream.flush();
+                        JSONObject o = new JSONObject();
+                        o.put("accepted-challenge-challenged", acceptedChallenge);
+                        outputStream.writeBytes(o + "\n");
+                        outputStream.flush();
                         opponentSocket.outputStream.writeBytes(Main.connection.nameFromUUID(uuid) + " accepted your challenge!\n");
+                        opponentSocket.outputStream.flush();
+                        JSONObject acceptedToChallenger = new JSONObject();
+                        acceptedToChallenger.put("accepted-challenge-challenger", challengeID);
+                        opponentSocket.outputStream.writeBytes(acceptedToChallenger + "\n");
                         opponentSocket.outputStream.flush();
 
                         opponentSocket.pendingChallenges.remove(challengeID);
+                        games.put(challengeID, new Game(opponentUUID));
+                        opponentSocket.games.put(challengeID, new Game(uuid));
                     }
                     case DECLINE_CHALLENGE -> {
                         Long challengeID = object.getLong("declined-challenge");
@@ -192,7 +234,36 @@ public class ClientSocket extends Thread {
                         opponentSocket.outputStream.writeBytes(Main.connection.nameFromUUID(uuid) + " declined your challenge.\n");
                         opponentSocket.outputStream.flush();
 
+                        JSONObject declinedChallengeData = new JSONObject();
+                        declinedChallengeData.put("declined-challenge", challengeID);
+                        opponentSocket.outputStream.writeBytes(declinedChallengeData + "\n");
+                        opponentSocket.outputStream.flush();
+
                         opponentSocket.pendingChallenges.remove(challengeID);
+                    }
+                    case ACCEPT_DRAW -> {
+                        Long gameID = object.getLong("accepted-draw-game-id");
+                        String opponentUUID = object.getString("accepted-draw-uuid");
+                        ClientSocket opponentSocket = Main.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                        if (opponentSocket.games.containsKey(gameID)) {
+                            outputStream.writeBytes(object + "\n");
+                            outputStream.flush();
+                            opponentSocket.outputStream.writeBytes(object + "\n");
+                            opponentSocket.outputStream.flush();
+                        } else {
+                            System.out.println("Error: Client accepted nonexistent draw offer: " + gameID);
+                        }
+                    }
+                    case DECLINE_DRAW -> {
+                        Long gameID = object.getLong("declined-draw-game-id");
+                        String opponentUUID = object.getString("declined-draw-uuid");
+                        ClientSocket opponentSocket = Main.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                        if (opponentSocket.games.containsKey(gameID)) {
+                            opponentSocket.outputStream.writeBytes(object + "\n");
+                            opponentSocket.outputStream.flush();
+                        } else {
+                            System.out.println("Error: Client declined nonexistent draw offer: " + gameID);
+                        }
                     }
                 }
             }
