@@ -207,6 +207,7 @@ public class ClientSocket extends Thread {
                         outputStream.flush();
                         JSONObject o = new JSONObject();
                         o.put("accepted-challenge-challenged", acceptedChallenge);
+                        o.put("challenged-data", object.getJSONObject("challenged-data"));
                         outputStream.writeBytes(o + "\n");
                         outputStream.flush();
                         opponentSocket.outputStream.writeBytes(Main.connection.nameFromUUID(uuid) + " accepted your challenge!\n");

@@ -5,7 +5,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6a6b5e18-55be-4997-ab53-76c08634388e" name="Changes" comment="e">
-      <change afterPath="$PROJECT_DIR$/src/main/java/me/vlink102/personal/chess/socketserver/Game.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/vlink102/personal/chess/socketserver/ClientSocket.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/vlink102/personal/chess/socketserver/ClientSocket.java" afterDir="false" />
     </list>
@@ -91,7 +90,9 @@
       <workItem from="1679242526056" duration="4000" />
       <workItem from="1679242550809" duration="14157000" />
       <workItem from="1679594410462" duration="12146000" />
-      <workItem from="1679737392415" duration="25334000" />
+      <workItem from="1679737392415" duration="25350000" />
+      <workItem from="1680115480148" duration="367000" />
+      <workItem from="1680116937672" duration="3398000" />
     </task>
     <task id="LOCAL-00001" summary="e">
       <created>1678318279966</created>
@@ -121,7 +122,14 @@
       <option name="project" value="LOCAL" />
       <updated>1679612768023</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="e">
+      <created>1679867471394</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1679867471394</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
