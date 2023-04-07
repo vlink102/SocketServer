@@ -1,13 +1,18 @@
 package me.vlink102.personal.chess.socketserver.ratings;
 
 public class Rating {
-    private final String name;
+    private String name;
     private final String uuid;
     private double rating;
     private double ratingDeviation;
     private double volatility;
     private int numberOfResults = 0;
     private final String pwd;
+
+    private int age;
+    private String ISO_Location;
+    private String aboutMe;
+    private String profilePicture;
 
     private double workingRating;
     private double workingRatingDeviation;
@@ -43,7 +48,7 @@ public class Rating {
         this.pwd = pwd;
     }
 
-    public Rating(String name, String uuid, double rating, double ratingDeviation, double volatility, int numberOfResults, double workingRating, double workingRatingDeviation, double workingVolatility, String pwd) {
+    public Rating(String name, int age, String location, String about, String pfp, String uuid, double rating, double ratingDeviation, double volatility, int numberOfResults, double workingRating, double workingRatingDeviation, double workingVolatility, String pwd) {
         this.name = name;
         this.uuid = uuid;
         this.rating = rating;
@@ -54,6 +59,26 @@ public class Rating {
         this.workingRatingDeviation = workingRatingDeviation;
         this.workingRating = workingRating;
         this.pwd = pwd;
+        this.age = age;
+        this.ISO_Location = location;
+        this.aboutMe = about;
+        this.profilePicture = pfp;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public String getISO_Location() {
+        return ISO_Location;
+    }
+
+    public String getProfilePicture() {
+        return profilePicture;
+    }
+
+    public String getAboutMe() {
+        return aboutMe;
     }
 
     /**

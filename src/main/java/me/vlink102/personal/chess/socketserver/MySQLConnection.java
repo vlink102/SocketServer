@@ -156,7 +156,7 @@ public class MySQLConnection {
         try (Connection connection = DriverManager.getConnection(url)) {
             connection.prepareStatement("DELETE FROM `PLAYERS`;");
             for (Rating player : players) {
-                connection.prepareStatement("INSERT INTO `PLAYERS` VALUES ('" + player.getUuid() + "'," + player.getRating() + "," + player.getRatingDeviation() + "," + player.getVolatility() + "," + player.getNumberOfResults() + "," + player.getWorkingRating() + "," + player.getWorkingRatingDeviation() + "," + player.getWorkingVolatility() + ",'" + player.getName() + "','" + player.M() + "') ON DUPLICATE KEY UPDATE " +
+                connection.prepareStatement("INSERT INTO `PLAYERS` VALUES ('" + player.getUuid() + "'," + player.getRating() + "," + player.getRatingDeviation() + "," + player.getVolatility() + "," + player.getNumberOfResults() + "," + player.getWorkingRating() + "," + player.getWorkingRatingDeviation() + "," + player.getWorkingVolatility() + ",'" + player.getName() + "','" + player.M() + "','" + player.getProfilePicture() + "'," + player.getAge() + ",'" + player.getISO_Location() + "','" + player.getAboutMe() + "') ON DUPLICATE KEY UPDATE " +
                         "name=VALUES(name)," +
                         "rating=VALUES(rating)," +
                         "rating_deviation=VALUES(rating_deviation)," +
@@ -165,7 +165,11 @@ public class MySQLConnection {
                         "working_rating=VALUES(working_rating)," +
                         "working_rating_deviation=VALUES(working_rating_deviation)," +
                         "working_volatility=VALUES(working_volatility)," +
-                        "password=VALUES(password)" + ";").execute();
+                        "password=VALUES(password)," +
+                        "pfp=VALUES(pfp)," +
+                        "age=VALUES(age)," +
+                        "location=VALUES(location)," +
+                        "about=VALUES(about)" + ";").execute();
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -194,8 +198,12 @@ public class MySQLConnection {
                 double workingRatingDeviation = playerSet.getDouble("working_rating_deviation");
                 double workingVolatility = playerSet.getDouble("working_volatility");
                 String pwd = playerSet.getString("password");
+                int age = playerSet.getInt("age");
+                String ISO = playerSet.getString("location");
+                String aboutMe = playerSet.getString("about");
+                String pfp = playerSet.getString("pfp");
 
-                addPlayer(new Rating(name, uuid, rating, ratingDeviation, volatility, numberOfGames, workingRating, workingRatingDeviation, workingVolatility, pwd));
+                addPlayer(new Rating(name, age, ISO, aboutMe, pfp, uuid, rating, ratingDeviation, volatility, numberOfGames, workingRating, workingRatingDeviation, workingVolatility, pwd));
             }
             while (participantSet.next()) {
                 String uuid = participantSet.getString("uuid");
