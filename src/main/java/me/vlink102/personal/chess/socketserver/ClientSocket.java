@@ -2,33 +2,29 @@ package me.vlink102.personal.chess.socketserver;
 
 import org.json.JSONObject;
 
-import javax.swing.*;
 import java.io.*;
 import java.net.Socket;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Objects;
+import java.util.Set;
 
 public class ClientSocket extends Thread {
-    private final Socket socket;
+
     private final String uuid;
-    private final InputStreamReader streamReader;
-    private final PrintWriter printWriter;
     private final BufferedReader reader;
     private final DataOutputStream outputStream;
 
-    public ClientSocket(Socket socket, String uuid, InputStreamReader streamReader, PrintWriter printWriter, BufferedReader reader) {
+    public ClientSocket(Socket socket, String uuid, BufferedReader reader) {
         this.pendingChallenges = new HashMap<>();
         this.games = new HashMap<>();
-        this.socket = socket;
         this.uuid = uuid;
-        this.streamReader = streamReader;
-        this.printWriter = printWriter;
         this.reader = reader;
         try {
             this.outputStream = new DataOutputStream(socket.getOutputStream());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        System.out.println("Client socket [" + uuid + " (" + Main.connection.nameFromUUID(uuid) + ")] initialised");
+        System.out.println("Client '" + Server.connection.nameFromUUID(uuid) + "' connected successfully (" + uuid + ")");
     }
 
     public String getUuid() {
@@ -46,11 +42,15 @@ public class ClientSocket extends Thread {
         ACCEPT_CHALLENGE,
         DECLINE_CHALLENGE,
         ACCEPT_DRAW,
-        DECLINE_DRAW
+        DECLINE_DRAW,
+        VERSION_CONTROL
     }
 
     public PacketType getPacketType(JSONObject object) {
         Set<String> keys = object.keySet();
+        if (keys.contains("version")) {
+            return PacketType.VERSION_CONTROL;
+        }
         if (keys.contains("resign_uuid")) {
             return PacketType.RESIGN;
         }
@@ -87,9 +87,9 @@ public class ClientSocket extends Thread {
     public JSONObject getOnline(String requestUUID) {
         JSONObject wrapper = new JSONObject();
         JSONObject o = new JSONObject();
-        for (String uuid : Main.CONNECTED_SOCKET_MAP.keySet()) {
+        for (String uuid : Server.CONNECTED_SOCKET_MAP.keySet()) {
             if (!(requestUUID.equals(uuid))) {
-                o.put(uuid, Main.connection.nameFromUUID(uuid));
+                o.put(uuid, Server.connection.nameFromUUID(uuid));
             }
         }
         wrapper.put("online_players", o);
@@ -112,11 +112,24 @@ public class ClientSocket extends Thread {
 
 
                 switch (type) {
+                    case VERSION_CONTROL -> {
+                        JSONObject o = new JSONObject();
+                        boolean correctVersion =  (object.getString("version").equals(Server.version));
+                        String uuid = object.getString("uuid");
+                        o.put("version-control-result", correctVersion);
+                        if (!correctVersion) {
+                            o.put("correct-version", Server.version);
+                            o.put("update-link", Server.updateLink);
+                        } else {
+                            o.put("banned", Server.bannedPlayers.contains(uuid));
+                        }
+                        outputStream.writeBytes(o + "\n");
+                        outputStream.flush();
+                    }
                     case ONLINE -> {
-                        for (String uuid : Main.CONNECTED_SOCKET_MAP.keySet()) {
-                            DataOutputStream stream = Main.CONNECTED_SOCKET_MAP.get(uuid).outputStream;
-                            stream.writeBytes(getOnline(this.uuid) + "\n");
-                            stream.flush();
+                        for (ClientSocket socket1 : Server.CONNECTED_SOCKET_MAP.values()) {
+                            socket1.outputStream.writeBytes(getOnline(this.uuid) + "\n");
+                            socket1.outputStream.flush();
                         }
                     }
                     case MOVE -> {
@@ -124,7 +137,7 @@ public class ClientSocket extends Thread {
                         if (games.containsKey(gameID)) {
                             Game game = games.get(gameID);
                             String opponentUUID = game.getOpponent();
-                            ClientSocket opponentSocket = Main.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                            ClientSocket opponentSocket = Server.CONNECTED_SOCKET_MAP.get(opponentUUID);
                             opponentSocket.outputStream.writeBytes(object + "\n");
                             opponentSocket.outputStream.flush();
                         } else {
@@ -136,7 +149,7 @@ public class ClientSocket extends Thread {
                         if (games.containsKey(gameID)) {
                             Game game = games.get(gameID);
                             String opponentUUID = game.getOpponent();
-                            ClientSocket opponentSocket = Main.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                            ClientSocket opponentSocket = Server.CONNECTED_SOCKET_MAP.get(opponentUUID);
                             opponentSocket.outputStream.writeBytes(object + "\n");
                             opponentSocket.outputStream.flush();
                         } else {
@@ -148,7 +161,7 @@ public class ClientSocket extends Thread {
                         if (games.containsKey(gameID)) {
                             Game game = games.get(gameID);
                             String opponentUUID = game.getOpponent();
-                            ClientSocket opponentSocket = Main.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                            ClientSocket opponentSocket = Server.CONNECTED_SOCKET_MAP.get(opponentUUID);
                             opponentSocket.outputStream.writeBytes(object + "\n");
                             opponentSocket.outputStream.flush();
                         } else {
@@ -160,7 +173,7 @@ public class ClientSocket extends Thread {
                         if (games.containsKey(gameID)) {
                             Game game = games.get(gameID);
                             String opponentUUID = game.getOpponent();
-                            ClientSocket opponentSocket = Main.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                            ClientSocket opponentSocket = Server.CONNECTED_SOCKET_MAP.get(opponentUUID);
                             opponentSocket.outputStream.writeBytes(object + "\n");
                             opponentSocket.outputStream.flush();
                         } else {
@@ -177,18 +190,18 @@ public class ClientSocket extends Thread {
                             System.out.println("Error: Challenger UUID does not equal ClientSocket saved UUID");
                             break;
                         }
-                        ClientSocket opponentSocket = Main.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                        ClientSocket opponentSocket = Server.CONNECTED_SOCKET_MAP.get(opponentUUID);
                         if (opponentSocket == null) {
                             System.out.println("Error: Opponent ClientSocket not found");
                             break;
                         }
 
-                        outputStream.writeBytes("Successfully sent challenge to " + Main.connection.nameFromUUID(opponentUUID) + "!\n");
+                        outputStream.writeBytes("Successfully sent challenge to " + Server.connection.nameFromUUID(opponentUUID) + "!\n");
                         outputStream.flush();
 
                         pendingChallenges.put(object.getLong("challenge-id"), object);
 
-                        opponentSocket.outputStream.writeBytes("Successfully received challenge from " + Main.connection.nameFromUUID(uuid) + "!\n");
+                        opponentSocket.outputStream.writeBytes("Successfully received challenge from " + Server.connection.nameFromUUID(uuid) + "!\n");
                         opponentSocket.outputStream.flush();
 
                         opponentSocket.outputStream.writeBytes(object + "\n");
@@ -197,20 +210,20 @@ public class ClientSocket extends Thread {
                     case ACCEPT_CHALLENGE -> {
                         Long challengeID = object.getLong("accepted-challenge");
                         String opponentUUID = object.getString("opponent");
-                        ClientSocket opponentSocket = Main.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                        ClientSocket opponentSocket = Server.CONNECTED_SOCKET_MAP.get(opponentUUID);
                         if (!opponentSocket.pendingChallenges.containsKey(challengeID)) {
                             System.out.println("Error: Client accepted nonexistent challenge");
                             break;
                         }
                         JSONObject acceptedChallenge = opponentSocket.pendingChallenges.get(challengeID);
-                        outputStream.writeBytes("Successfully accepted " + Main.connection.nameFromUUID(opponentUUID) + "'s challenge!\n");
+                        outputStream.writeBytes("Successfully accepted " + Server.connection.nameFromUUID(opponentUUID) + "'s challenge!\n");
                         outputStream.flush();
                         JSONObject o = new JSONObject();
                         o.put("accepted-challenge-challenged", acceptedChallenge);
                         o.put("challenged-data", object.getJSONObject("challenged-data"));
                         outputStream.writeBytes(o + "\n");
                         outputStream.flush();
-                        opponentSocket.outputStream.writeBytes(Main.connection.nameFromUUID(uuid) + " accepted your challenge!\n");
+                        opponentSocket.outputStream.writeBytes(Server.connection.nameFromUUID(uuid) + " accepted your challenge!\n");
                         opponentSocket.outputStream.flush();
                         JSONObject acceptedToChallenger = new JSONObject();
                         acceptedToChallenger.put("accepted-challenge-challenger", challengeID);
@@ -224,15 +237,15 @@ public class ClientSocket extends Thread {
                     case DECLINE_CHALLENGE -> {
                         Long challengeID = object.getLong("declined-challenge");
                         String opponentUUID = object.getString("opponent");
-                        ClientSocket opponentSocket = Main.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                        ClientSocket opponentSocket = Server.CONNECTED_SOCKET_MAP.get(opponentUUID);
                         if (!opponentSocket.pendingChallenges.containsKey(challengeID)) {
                             System.out.println("Error: Client declined nonexistent challenge");
                             break;
                         }
                         JSONObject declinedChallenge = opponentSocket.pendingChallenges.get(challengeID);
-                        outputStream.writeBytes("Successfully declined " + Main.connection.nameFromUUID(opponentUUID) + "'s challenge!\n");
+                        outputStream.writeBytes("Successfully declined " + Server.connection.nameFromUUID(opponentUUID) + "'s challenge!\n");
                         outputStream.flush();
-                        opponentSocket.outputStream.writeBytes(Main.connection.nameFromUUID(uuid) + " declined your challenge.\n");
+                        opponentSocket.outputStream.writeBytes(Server.connection.nameFromUUID(uuid) + " declined your challenge.\n");
                         opponentSocket.outputStream.flush();
 
                         JSONObject declinedChallengeData = new JSONObject();
@@ -245,7 +258,7 @@ public class ClientSocket extends Thread {
                     case ACCEPT_DRAW -> {
                         Long gameID = object.getLong("accepted-draw-game-id");
                         String opponentUUID = object.getString("accepted-draw-uuid");
-                        ClientSocket opponentSocket = Main.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                        ClientSocket opponentSocket = Server.CONNECTED_SOCKET_MAP.get(opponentUUID);
                         if (opponentSocket.games.containsKey(gameID)) {
                             outputStream.writeBytes(object + "\n");
                             outputStream.flush();
@@ -258,7 +271,7 @@ public class ClientSocket extends Thread {
                     case DECLINE_DRAW -> {
                         Long gameID = object.getLong("declined-draw-game-id");
                         String opponentUUID = object.getString("declined-draw-uuid");
-                        ClientSocket opponentSocket = Main.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                        ClientSocket opponentSocket = Server.CONNECTED_SOCKET_MAP.get(opponentUUID);
                         if (opponentSocket.games.containsKey(gameID)) {
                             opponentSocket.outputStream.writeBytes(object + "\n");
                             opponentSocket.outputStream.flush();
@@ -269,12 +282,16 @@ public class ClientSocket extends Thread {
                 }
             }
             this.interrupt();
-            System.out.println("Client disconnected: " + uuid + " (" + Main.connection.nameFromUUID(uuid) + ")");
-            Main.removeCSocket(this);
+            System.out.println("User '" + Server.connection.nameFromUUID(uuid) + "' disconnected (" + uuid + ")");
+            Server.removeCSocket(this);
         } catch (IOException ex) {
             System.out.println("Server exception: " + ex.getMessage());
             ex.printStackTrace();
-            Main.removeCSocket(this);
+            Server.removeCSocket(this);
         }
+    }
+
+    public DataOutputStream getOutputStream() {
+        return outputStream;
     }
 }

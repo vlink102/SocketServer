@@ -146,7 +146,7 @@ public class MySQLConnection {
 
     public void createNewAccount(String name, String pwd) {
         String UUID = java.util.UUID.randomUUID().toString();
-        addPlayer(new Rating(name, UUID, pwd, Main.calculator));
+        addPlayer(new Rating(name, UUID, pwd, Server.calculator));
         savePlayers();
         setPassword(UUID, pwd);
     }
@@ -230,7 +230,5 @@ public class MySQLConnection {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        System.out.println("Successfully connected to database");
-
     }
 }

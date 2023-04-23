@@ -43,7 +43,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>me.vlink102.personal.chess.socketserver.Main</mainClass>
+                            <mainClass>me.vlink102.personal.chess.socketserver.Server</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
