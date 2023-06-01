@@ -1,5 +1,7 @@
 package me.vlink102.personal.chess.socketserver;
 
+import me.vlink102.personal.chess.socketserver.ratings.Rating;
+import me.vlink102.personal.chess.socketserver.ratings.RatingCalculator;
 import org.json.JSONObject;
 
 import java.io.*;
@@ -43,13 +45,21 @@ public class ClientSocket extends Thread {
         DECLINE_CHALLENGE,
         ACCEPT_DRAW,
         DECLINE_DRAW,
-        VERSION_CONTROL
+        VERSION_CONTROL,
+        CHAT_MESSAGE,
+        GAME_END
     }
 
     public PacketType getPacketType(JSONObject object) {
         Set<String> keys = object.keySet();
         if (keys.contains("version")) {
             return PacketType.VERSION_CONTROL;
+        }
+        if (keys.contains("end-game-id")) {
+            return PacketType.GAME_END;
+        }
+        if (keys.contains("chat-uuid")) {
+            return PacketType.CHAT_MESSAGE;
         }
         if (keys.contains("resign_uuid")) {
             return PacketType.RESIGN;
@@ -126,6 +136,18 @@ public class ClientSocket extends Thread {
                         outputStream.writeBytes(o + "\n");
                         outputStream.flush();
                     }
+                    case CHAT_MESSAGE -> {
+                        long gameID = object.getLong("chat-game-id");
+                        if (games.containsKey(gameID)) {
+                            Game game = games.get(gameID);
+                            String opponentUUID = game.getOpponent();
+                            ClientSocket opponentSocket = Server.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                            opponentSocket.outputStream.writeBytes(object + "\n");
+                            opponentSocket.outputStream.flush();
+                        } else {
+                            System.out.println("Error: Client sent chat message to nonexistent game: " + gameID);
+                        }
+                    }
                     case ONLINE -> {
                         for (ClientSocket socket1 : Server.CONNECTED_SOCKET_MAP.values()) {
                             socket1.outputStream.writeBytes(getOnline(this.uuid) + "\n");
@@ -142,6 +164,51 @@ public class ClientSocket extends Thread {
                             opponentSocket.outputStream.flush();
                         } else {
                             System.out.println("Error: Client sent move to nonexistent game: " + gameID);
+                        }
+                    }
+                    case GAME_END -> {
+                        long gameID = object.getLong("end-game-id");
+                        if (games.containsKey(gameID)) {
+                            Game game = games.get(gameID);
+                            String opponentUUID = game.getOpponent();
+                            Rating self = MySQLConnection.getPlayer(MySQLConnection.players, uuid);
+                            Rating opp = MySQLConnection.getPlayer(MySQLConnection.players, opponentUUID);
+                            int clientElo = (int) self.getRating();
+                            int opponentElo = (int) opp.getRating();
+                            int reason = object.getInt("end-game-reason");
+                            switch (reason) {
+                                case 0, 50, 99, 5, 6, 3, 4 -> Server.results.addDraw(MySQLConnection.getPlayer(MySQLConnection.players, uuid), MySQLConnection.getPlayer(MySQLConnection.players, opponentUUID));
+                                case 1, 101, 7, 9 -> Server.results.addResult(MySQLConnection.getPlayer(MySQLConnection.players, uuid), MySQLConnection.getPlayer(MySQLConnection.players, opponentUUID));
+                                case 2, 100, 8, 10 -> Server.results.addResult(MySQLConnection.getPlayer(MySQLConnection.players, opponentUUID), MySQLConnection.getPlayer(MySQLConnection.players, uuid));
+                                case 200 -> System.out.println("Error: Illegal position in challenge game");
+                            }
+                            Server.calculator.updateRatings(Server.results);
+                            Server.connection.savePlayers();
+                            Server.connection.savePeriod(Server.results);
+                            Rating newSelf = MySQLConnection.getPlayer(MySQLConnection.players, uuid);
+                            Rating newOpp = MySQLConnection.getPlayer(MySQLConnection.players, opponentUUID);
+                            int newClientElo = (int) newSelf.getRating();
+                            int newOpponentElo = (int) newOpp.getRating();
+
+                            JSONObject o = new JSONObject();
+                            o.put("end-game-id", gameID);
+                            o.put("end-game-rating-old", clientElo);
+                            o.put("end-game-rating-new", newClientElo);
+                            o.put("end-game-reason", reason);
+                            outputStream.writeBytes(o + "\n");
+                            outputStream.flush();
+
+                            ClientSocket opponentSocket = Server.CONNECTED_SOCKET_MAP.get(opponentUUID);
+                            JSONObject s = new JSONObject();
+                            s.put("end-game-id", gameID);
+                            s.put("end-game-rating-old", opponentElo);
+                            s.put("end-game-rating-new", newOpponentElo);
+                            s.put("end-game-reason", reason);
+                            opponentSocket.outputStream.writeBytes(s + "\n");
+                            opponentSocket.outputStream.flush();
+
+                        } else {
+                            System.out.println("Error: Client ended nonexistent game: " + gameID);
                         }
                     }
                     case ABORT -> {

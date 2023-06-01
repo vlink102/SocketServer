@@ -5,15 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6a6b5e18-55be-4997-ab53-76c08634388e" name="Changes" comment="e">
-      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dependency-reduced-pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/dependency-reduced-pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/vlink102/personal/chess/socketserver/ClientSocket.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/vlink102/personal/chess/socketserver/ClientSocket.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/vlink102/personal/chess/socketserver/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/vlink102/personal/chess/socketserver/Server.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/vlink102/personal/chess/socketserver/MySQLConnection.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/vlink102/personal/chess/socketserver/MySQLConnection.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -107,7 +100,11 @@
       <workItem from="1680785115208" duration="7204000" />
       <workItem from="1680969889717" duration="3645000" />
       <workItem from="1681052264635" duration="1323000" />
-      <workItem from="1682170726652" duration="18311000" />
+      <workItem from="1682170726652" duration="18324000" />
+      <workItem from="1683925152682" duration="1815000" />
+      <workItem from="1683999134970" duration="1379000" />
+      <workItem from="1684071977030" duration="941000" />
+      <workItem from="1685558814095" duration="11735000" />
     </task>
     <task id="LOCAL-00001" summary="e">
       <created>1678318279966</created>
@@ -158,7 +155,14 @@
       <option name="project" value="LOCAL" />
       <updated>1680985423581</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="e">
+      <created>1682286873091</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1682286873091</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
