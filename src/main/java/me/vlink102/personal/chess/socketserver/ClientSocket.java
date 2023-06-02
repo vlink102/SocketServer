@@ -177,14 +177,16 @@ public class ClientSocket extends Thread {
                             int opponentElo = (int) opp.getRating();
                             int reason = object.getInt("end-game-reason");
                             switch (reason) {
-                                case 0, 50, 99, 5, 6, 3, 4 -> Server.results.addDraw(MySQLConnection.getPlayer(MySQLConnection.players, uuid), MySQLConnection.getPlayer(MySQLConnection.players, opponentUUID));
+                                case 0, 50, 99, 5, 6 -> Server.results.addDraw(MySQLConnection.getPlayer(MySQLConnection.players, uuid), MySQLConnection.getPlayer(MySQLConnection.players, opponentUUID));
                                 case 1, 101, 7, 9 -> Server.results.addResult(MySQLConnection.getPlayer(MySQLConnection.players, uuid), MySQLConnection.getPlayer(MySQLConnection.players, opponentUUID));
                                 case 2, 100, 8, 10 -> Server.results.addResult(MySQLConnection.getPlayer(MySQLConnection.players, opponentUUID), MySQLConnection.getPlayer(MySQLConnection.players, uuid));
                                 case 200 -> System.out.println("Error: Illegal position in challenge game");
                             }
-                            Server.calculator.updateRatings(Server.results);
-                            Server.connection.savePlayers();
-                            Server.connection.savePeriod(Server.results);
+                            if (reason != 3 && reason != 4) {
+                                Server.calculator.updateRatings(Server.results);
+                                Server.connection.savePlayers();
+                                Server.connection.savePeriod(Server.results);
+                            }
                             Rating newSelf = MySQLConnection.getPlayer(MySQLConnection.players, uuid);
                             Rating newOpp = MySQLConnection.getPlayer(MySQLConnection.players, opponentUUID);
                             int newClientElo = (int) newSelf.getRating();
@@ -207,6 +209,7 @@ public class ClientSocket extends Thread {
                             opponentSocket.outputStream.writeBytes(s + "\n");
                             opponentSocket.outputStream.flush();
 
+                            games.remove(gameID);
                         } else {
                             System.out.println("Error: Client ended nonexistent game: " + gameID);
                         }
